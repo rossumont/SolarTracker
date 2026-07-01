@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Solar Tracker ☀️</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --sky:#e8f4fd; --sky2:#d0eafb; --sky3:#b3d9f7;
+  --blue:#2196f3; --blue-dark:#1565c0; --blue-mid:#42a5f5;
+  --cloud:#ffffff; --cloud2:#f5f9ff;
+  --teal:#00bcd4; --green:#43a047; --green-light:#e8f5e9;
+  --yellow:#fff9c4; --yellow2:#f9a825;
+  --red:#e53935; --gray:#90a4ae; --text:#1a237e;
+  --shadow:0 2px 12px rgba(33,150,243,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;background:var(--sky);color:var(--text);padding-bottom:60px;min-height:100vh;}
+header{background:linear-gradient(135deg,var(--blue-dark),var(--blue));color:white;padding:18px 16px 14px;position:sticky;top:0;z-index:100;box-shadow:0 3px 16px rgba(21,101,192,.25);}
+header h1{font-size:1.25rem;font-weight:700;letter-spacing:.5px;}
+header p{font-size:.75rem;opacity:.85;margin-top:3px;}
+.container{padding:14px;max-width:720px;margin:0 auto;}
+.card{background:var(--cloud);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--sky3);}
+.card h2{font-size:.95rem;font-weight:700;color:var(--blue-dark);margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+label{display:block;font-size:.78rem;margin-bottom:3px;color:#546e7a;font-weight:500;}
+input[type=number],input[type=date],input[type=text],select{
+  width:100%;padding:10px 12px;border:1.5px solid var(--sky3);border-radius:10px;
+  font-size:.95rem;margin-bottom:10px;background:var(--cloud2);color:var(--text);
+  -webkit-appearance:none;outline:none;transition:border .2s;
+}
+input:focus,select:focus{border-color:var(--blue);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.btn{width:100%;padding:13px;border:none;border-radius:12px;background:var(--blue);color:white;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:4px;transition:background .2s;letter-spacing:.3px;}
+.btn:active{background:var(--blue-dark);}
+.btn-green{background:var(--green);}
+.btn-green:active{background:#2e7d32;}
+.btn-gray{background:var(--gray);}
+.btn-red{background:var(--red);}
+.btn-sm{padding:8px 14px;font-size:.82rem;width:auto;border-radius:8px;margin-top:0;}
+/* cost section */
+.cost-total{background:linear-gradient(135deg,var(--blue),var(--teal));border-radius:14px;padding:16px;color:white;text-align:center;margin-bottom:10px;}
+.cost-total .num{font-size:1.8rem;font-weight:800;}
+.cost-total .cap{font-size:.78rem;opacity:.9;margin-top:2px;}
+.cost-list{border:1px solid var(--sky3);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-bottom:1px solid var(--sky2);font-size:.85rem;}
+.cost-row:last-child{border-bottom:none;}
+.cost-row .name{color:var(--text);}
+.cost-row .amt{font-weight:700;color:var(--blue-dark);}
+/* tabs */
+.tabs{display:flex;gap:6px;margin-bottom:12px;background:var(--sky2);border-radius:12px;padding:5px;}
+.tab-btn{flex:1;padding:9px 4px;border:none;border-radius:9px;background:transparent;font-size:.78rem;font-weight:600;cursor:pointer;color:var(--gray);transition:all .2s;}
+.tab-btn.active{background:var(--cloud);color:var(--blue-dark);box-shadow:0 1px 6px rgba(33,150,243,.15);}
+.sec{display:none;}
+.sec.active{display:block;}
+/* summary boxes */
+.sum-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
+.sum-box{border-radius:12px;padding:12px 8px;text-align:center;}
+.sum-box .num{font-size:1.2rem;font-weight:800;}
+.sum-box .cap{font-size:.66rem;margin-top:3px;font-weight:500;}
+.sb-blue{background:var(--sky2);color:var(--blue-dark);}
+.sb-teal{background:#e0f7fa;color:#006064;}
+.sb-green{background:var(--green-light);color:#1b5e20;}
+/* result boxes */
+.result-box{background:var(--sky2);border-radius:10px;padding:12px;margin-top:8px;}
+.rrow{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--sky3);font-size:.85rem;}
+.rrow:last-child{border-bottom:none;}
+.rrow .lbl{color:#546e7a;}
+.rrow .val{font-weight:700;color:var(--blue-dark);}
+.big-saved{background:linear-gradient(135deg,var(--green),#81c784);border-radius:12px;padding:16px;text-align:center;margin-top:10px;color:white;}
+.big-saved .num{font-size:1.8rem;font-weight:800;}
+.big-saved .cap{font-size:.78rem;opacity:.9;margin-top:2px;}
+.save-bar{background:var(--sky2);border-radius:10px;padding:12px;margin-top:10px;}
+/* table */
+table.dt{width:100%;border-collapse:collapse;font-size:.72rem;margin-top:8px;}
+table.dt th,table.dt td{border:1px solid var(--sky3);padding:5px 4px;text-align:center;}
+table.dt th{background:var(--sky2);color:var(--blue-dark);font-size:.68rem;}
+table.dt tr:nth-child(even){background:var(--cloud2);}
+table.dt .cum{background:#e3f2fd;}
+table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
+.smbtn{background:none;border:1.5px solid var(--sky3);border-radius:6px;padding:3px 8px;font-size:.68rem;color:var(--gray);cursor:pointer;}
+.smbtn.danger{color:var(--red);border-color:var(--red);}
+.badge{display:inline-block;background:var(--blue);color:white;border-radius:6px;padding:1px 8px;font-size:.68rem;margin-left:5px;}
+.info-box{background:var(--sky2);border-radius:10px;padding:12px;font-size:.82rem;line-height:1.8;color:#37474f;}
+.empty-msg{color:#90a4ae;font-size:.82rem;padding:10px 0;}
+.chart-wrap{position:relative;height:240px;margin-top:10px;}
+.footer-note{text-align:center;font-size:.7rem;color:var(--gray);margin-top:16px;}
+.payback-banner{background:linear-gradient(135deg,#43a047,#66bb6a);color:white;border-radius:12px;padding:14px;text-align:center;font-size:1rem;font-weight:700;margin-top:8px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>☀️ Solar Tracker</h1>
+  <p>ติดตามพลังงานโซลาร์ · คำนวณค่าไฟ · วิเคราะห์คืนทุน</p>
+</header>
+<div class="container">
+
+<!-- ===== ต้นทุน ===== -->
+<div class="card">
+  <h2>💰 จัดการต้นทุน</h2>
+  <div class="cost-total">
+    <div class="num" id="cost_total">฿0</div>
+    <div class="cap">รวมต้นทุนทั้งหมด</div>
+  </div>
+  <div id="cost_list"></div>
+  <div class="row2" style="margin-top:8px;">
+    <div><label>รายการ</label><input type="text" id="cost_name" placeholder="เช่น ค่าติดตั้งโซลาร์"></div>
+    <div><label>จำนวนเงิน (บาท)</label><input type="number" step="1" id="cost_amt" placeholder="0"></div>
+  </div>
+  <button class="btn btn-sm btn-green" onclick="addCost()">➕ เพิ่มต้นทุน</button>
+</div>
+
+<!-- ===== ค่าคงที่ ===== -->
+<div class="card">
+  <h2>⚙️ ค่าคงที่อัตราค่าไฟ</h2>
+  <div class="row3">
+    <div><label>เรท 1-150 (฿/unit)</label><input type="number" step="0.0001" id="rate1" value="3.25"></div>
+    <div><label>เรท 151-400 (฿/unit)</label><input type="number" step="0.0001" id="rate2" value="4.22"></div>
+    <div><label>เรท 401+ (฿/unit)</label><input type="number" step="0.0001" id="rate3" value="4.42"></div>
+  </div>
+  <div class="row2">
+    <div><label>ค่าบริการ/เดือน (฿)</label><input type="number" step="0.01" id="serviceFee" value="38.22"></div>
+    <div><label>ค่า Ft (฿/unit)</label><input type="number" step="0.0001" id="ftRate" value="0.1623"></div>
+  </div>
+  <button class="smbtn" onclick="saveConst()">💾 บันทึกค่าคงที่</button>
+  <span id="constMsg" style="font-size:.75rem;color:var(--green);margin-left:8px;"></span>
+</div>
+
+<!-- ===== กรอกรายวัน ===== -->
+<div class="card">
+  <h2>📝 กรอก unit รายวัน</h2>
+  <div class="row2">
+    <div><label>วันที่</label><input type="date" id="entry_date"></div>
+    <div><label>รอบบิล (เช่น Jul 2026)</label><input type="text" id="entry_cycle" placeholder="Jul 2026"></div>
+  </div>
+  <div class="row2">
+    <div><label>รวมใช้ทั้งหมดวันนี้ (unit)</label><input type="number" step="0.01" id="entry_total" placeholder="0"></div>
+    <div><label>Import จากการไฟฟ้า (unit)</label><input type="number" step="0.01" id="entry_import" placeholder="0"></div>
+  </div>
+  <button class="btn" onclick="addEntry()">➕ บันทึกวันนี้</button>
+</div>
+
+<!-- ===== แท็บ ===== -->
+<div class="tabs">
+  <button class="tab-btn active" id="t1" onclick="switchTab(1)">📅 รายวัน</button>
+  <button class="tab-btn" id="t2" onclick="switchTab(2)">🧮 คำนวณ</button>
+  <button class="tab-btn" id="t3" onclick="switchTab(3)">📊 สรุป+กราฟ</button>
+</div>
+
+<!-- ===== ตารางรายวัน ===== -->
+<div class="card sec active" id="sec1">
+  <h2>📅 ตารางรายวัน + สะสม <span class="badge" id="entryCount">0</span></h2>
+  <div class="sum-grid">
+    <div class="sum-box sb-blue"><div class="num" id="su_total">0</div><div class="cap">รวมใช้ (unit)</div></div>
+    <div class="sum-box sb-teal"><div class="num" id="su_import">0</div><div class="cap">Import รวม (unit)</div></div>
+    <div class="sum-box sb-green"><div class="num" id="su_solar">0</div><div class="cap">โซลาร์รวม (unit)</div></div>
+  </div>
+  <div id="tableWrap"><p class="empty-msg">ยังไม่มีข้อมูล</p></div>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <button class="btn btn-sm" onclick="exportEntriesCSV()" style="background:#1565c0;">📥 Export CSV รายวัน</button>
+    <button class="btn btn-red btn-sm" onclick="clearEntries()">🗑️ ล้างข้อมูลรายวัน</button>
+  </div>
+</div>
+
+<!-- ===== คำนวณ ===== -->
+<div class="card sec" id="sec2">
+  <h2>🧮 คำนวณค่าไฟ</h2>
+  <label>เลือกรอบบิล</label>
+  <select id="calc_cycle"><option value="">-- เลือกรอบ --</option></select>
+  <button class="btn" onclick="calcBill()">🧮 คำนวณค่าไฟรอบนี้</button>
+  <div id="calcResult" style="display:none;margin-top:12px;">
+    <div class="result-box">
+      <div class="rrow"><span class="lbl">Import รวมทั้งรอบ (unit)</span><span class="val" id="c_import">-</span></div>
+      <div class="rrow"><span class="lbl">โซลาร์รวม (unit)</span><span class="val" id="c_solar">-</span></div>
+      <div class="rrow"><span class="lbl">รวมใช้ทั้งหมด (unit)</span><span class="val" id="c_total">-</span></div>
+    </div>
+    <p style="font-size:.82rem;color:#546e7a;margin-top:10px;font-weight:600;">ค่าไฟที่จ่ายจริง (คิดจาก Import)</p>
+    <div class="result-box">
+      <div class="rrow"><span class="lbl">ค่าพลังงาน</span><span class="val" id="c_energy">-</span></div>
+      <div class="rrow"><span class="lbl">ค่า Ft</span><span class="val" id="c_ft">-</span></div>
+      <div class="rrow"><span class="lbl">ค่าบริการ</span><span class="val" id="c_svc">-</span></div>
+      <div class="rrow"><span class="lbl">รวม + VAT 7%</span><span class="val" id="c_actual">-</span></div>
+    </div>
+    <p style="font-size:.82rem;color:#546e7a;margin-top:10px;font-weight:600;">ถ้าไม่มีแผง (คิดจากรวมทั้งหมด)</p>
+    <div class="result-box">
+      <div class="rrow"><span class="lbl">ค่าพลังงาน</span><span class="val" id="c_np_energy">-</span></div>
+      <div class="rrow"><span class="lbl">ค่า Ft</span><span class="val" id="c_np_ft">-</span></div>
+      <div class="rrow"><span class="lbl">ค่าบริการ</span><span class="val" id="c_np_svc">-</span></div>
+      <div class="rrow"><span class="lbl">รวม + VAT 7%</span><span class="val" id="c_nopanel">-</span></div>
+    </div>
+    <div class="big-saved">
+      <div class="num" id="c_saved">-</div>
+      <div class="cap">💰 ประหยัดได้รอบนี้</div>
+    </div>
+    <div class="save-bar" style="margin-top:10px;">
+      <label>ชื่อรอบที่จะบันทึก</label>
+      <input type="text" id="saveLabel" placeholder="เช่น Jun 2026">
+      <button class="btn btn-green" onclick="saveSummary()">✅ บันทึกลงสรุปรายเดือน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== สรุป + กราฟ ===== -->
+<div class="card sec" id="sec3">
+  <h2>📊 สรุปรายเดือน + วิเคราะห์คืนทุน <span class="badge" id="summaryCount">0</span></h2>
+  <div id="summaryWrap"><p class="empty-msg">ยังไม่มีข้อมูล</p></div>
+  <div id="paybackBanner"></div>
+  <div class="chart-wrap"><canvas id="paybackChart"></canvas></div>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+    <button class="btn btn-sm" onclick="exportSummaryCSV()" style="background:#1565c0;">📥 Export CSV สรุปรายเดือน</button>
+    <button class="btn btn-gray btn-sm" onclick="clearSummary()">🗑️ ล้างสรุปรายเดือน</button>
+  </div>
+</div>
+
+<div class="card">
+  <h2>ℹ️ เรทค่าไฟที่ใช้</h2>
+  <div class="info-box">
+    หน่วย 1–150: เรทที่ตั้ง (ค่าเริ่มต้น 3.25 ฿)<br>
+    หน่วย 151–400: เรทที่ตั้ง (ค่าเริ่มต้น 4.22 ฿)<br>
+    หน่วย 401+: เรทที่ตั้ง (ค่าเริ่มต้น 4.42 ฿)<br>
+    + ค่าบริการรายเดือน + ค่า Ft + VAT 7%
+  </div>
+</div>
+
+<p class="footer-note">ข้อมูลเก็บในเครื่องเท่านั้น · ไม่ส่งขึ้นอินเทอร์เน็ต</p>
+</div>
+
+<script>
+const KEY_E='sv4_entries', KEY_C='sv4_const', KEY_S='sv4_summary', KEY_COST='sv4_cost';
+
+function fmt(n){ return Number(n).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtB(n){ return '฿'+fmt(n); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+// ---- COST ----
+function loadCost(){ return JSON.parse(localStorage.getItem(KEY_COST)||'[]'); }
+function saveCost(a){ localStorage.setItem(KEY_COST,JSON.stringify(a)); }
+function totalCost(){ return loadCost().reduce((s,c)=>s+c.amt,0); }
+
+function addCost(){
+  const name=document.getElementById('cost_name').value.trim();
+  const amt=parseFloat(document.getElementById('cost_amt').value)||0;
+  if(!name||amt<=0){alert('กรุณากรอกชื่อรายการและจำนวนเงิน');return;}
+  const cost=loadCost();
+  cost.push({name,amt});
+  saveCost(cost);
+  document.getElementById('cost_name').value='';
+  document.getElementById('cost_amt').value='';
+  renderCost(); renderSummary();
+}
+function deleteCost(i){
+  const c=loadCost(); c.splice(i,1); saveCost(c); renderCost(); renderSummary();
+}
+function renderCost(){
+  const cost=loadCost();
+  const total=cost.reduce((s,c)=>s+c.amt,0);
+  document.getElementById('cost_total').textContent=fmtB(total);
+  if(cost.length===0){document.getElementById('cost_list').innerHTML='<p class="empty-msg">ยังไม่มีรายการต้นทุน</p>';return;}
+  let html='<div class="cost-list">';
+  cost.forEach((c,i)=>{
+    html+=`<div class="cost-row"><span class="name">${c.name}</span><span style="display:flex;align-items:center;gap:8px;"><span class="amt">${fmtB(c.amt)}</span><button class="smbtn danger" onclick="deleteCost(${i})">ลบ</button></span></div>`;
+  });
+  html+='</div>';
+  document.getElementById('cost_list').innerHTML=html;
+}
+
+// ---- CONST ----
+function loadConst(){
+  const c=JSON.parse(localStorage.getItem(KEY_C)||'{}');
+  if(c.rate1) document.getElementById('rate1').value=c.rate1;
+  if(c.rate2) document.getElementById('rate2').value=c.rate2;
+  if(c.rate3) document.getElementById('rate3').value=c.rate3;
+  if(c.serviceFee) document.getElementById('serviceFee').value=c.serviceFee;
+  if(c.ftRate!==undefined) document.getElementById('ftRate').value=c.ftRate;
+}
+function saveConst(){
+  localStorage.setItem(KEY_C,JSON.stringify({
+    rate1:+document.getElementById('rate1').value,
+    rate2:+document.getElementById('rate2').value,
+    rate3:+document.getElementById('rate3').value,
+    serviceFee:+document.getElementById('serviceFee').value,
+    ftRate:+document.getElementById('ftRate').value,
+  }));
+  const m=document.getElementById('constMsg');
+  m.textContent='✓ บันทึกแล้ว';
+  setTimeout(()=>m.textContent='',2000);
+}
+
+// ---- ENTRIES ----
+function loadEntries(){ return JSON.parse(localStorage.getItem(KEY_E)||'[]'); }
+function saveEntries(a){ localStorage.setItem(KEY_E,JSON.stringify(a)); }
+
+function addEntry(){
+  const date=document.getElementById('entry_date').value||todayStr();
+  const cycle=document.getElementById('entry_cycle').value.trim();
+  const total=parseFloat(document.getElementById('entry_total').value)||0;
+  const imp=parseFloat(document.getElementById('entry_import').value)||0;
+  if(!cycle){alert('กรุณาระบุรอบบิล');return;}
+  if(total===0&&imp===0){alert('กรุณากรอกอย่างน้อย 1 ค่า');return;}
+  const solar=total-imp;
+  const entries=loadEntries();
+  entries.push({date,cycle,total,import:imp,solar});
+  saveEntries(entries);
+  document.getElementById('entry_total').value='';
+  document.getElementById('entry_import').value='';
+  renderAll();
+}
+function deleteEntry(i){
+  const e=loadEntries(); e.splice(i,1); saveEntries(e); renderAll();
+}
+function clearEntries(){
+  if(confirm('ล้างข้อมูลรายวันทั้งหมด?')){localStorage.removeItem(KEY_E);renderAll();}
+}
+
+// ---- TABS ----
+function switchTab(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('t'+i).classList.toggle('active',i===n);
+    document.getElementById('sec'+i).classList.toggle('active',i===n);
+  });
+  if(n===2) populateCycleSelect();
+  if(n===3) renderSummary();
+}
+
+// ---- TIERED ----
+function tiered(u,r1,r2,r3){
+  if(u<=150) return u*r1;
+  if(u<=400) return 150*r1+(u-150)*r2;
+  return 150*r1+250*r2+(u-400)*r3;
+}
+
+// ---- RENDER TABLE ----
+function renderTable(){
+  const entries=loadEntries();
+  document.getElementById('entryCount').textContent=entries.length;
+  if(entries.length===0){
+    document.getElementById('tableWrap').innerHTML='<p class="empty-msg">ยังไม่มีข้อมูล</p>';
+    document.getElementById('su_total').textContent='0';
+    document.getElementById('su_import').textContent='0';
+    document.getElementById('su_solar').textContent='0';
+    return;
+  }
+  const sorted=[...entries].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  document.getElementById('su_total').textContent=fmt(sorted.reduce((s,e)=>s+e.total,0));
+  document.getElementById('su_import').textContent=fmt(sorted.reduce((s,e)=>s+e.import,0));
+  document.getElementById('su_solar').textContent=fmt(sorted.reduce((s,e)=>s+e.solar,0));
+  let ct=0,ci=0,cs=0;
+  let html=`<table class="dt"><tr><th>วันที่</th><th>รอบ</th><th>ใช้รวม</th><th>Import</th><th>โซลาร์</th><th class="cum">สะสมใช้</th><th class="cum">สะสมImport</th><th class="cum">สะสมโซลาร์</th><th></th></tr>`;
+  sorted.forEach(e=>{
+    ct+=e.total; ci+=e.import; cs+=e.solar;
+    const origIdx=entries.findIndex(x=>x.date===e.date&&x.cycle===e.cycle&&x.total===e.total&&x.import===e.import);
+    html+=`<tr><td>${e.date}</td><td>${e.cycle}</td><td>${fmt(e.total)}</td><td>${fmt(e.import)}</td><td>${fmt(e.solar)}</td><td class="cum">${fmt(ct)}</td><td class="cum">${fmt(ci)}</td><td class="cum">${fmt(cs)}</td><td><button class="smbtn danger" onclick="deleteEntry(${origIdx})">ลบ</button></td></tr>`;
+  });
+  html+='</table>';
+  document.getElementById('tableWrap').innerHTML=html;
+}
+
+// ---- CYCLE SELECT ----
+function populateCycleSelect(){
+  const cycles=[...new Set(loadEntries().map(e=>e.cycle))].sort();
+  const sel=document.getElementById('calc_cycle');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">-- เลือกรอบ --</option>';
+  cycles.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===cur)o.selected=true;sel.appendChild(o);});
+}
+
+// ---- CALC BILL ----
+let lastCalc=null;
+function calcBill(){
+  const cycle=document.getElementById('calc_cycle').value;
+  if(!cycle){alert('กรุณาเลือกรอบบิล');return;}
+  const c=JSON.parse(localStorage.getItem(KEY_C)||'{}');
+  const r1=+c.rate1||3.25,r2=+c.rate2||4.22,r3=+c.rate3||4.42;
+  const svc=+c.serviceFee||38.22,ft=+c.ftRate||0.1623;
+  const entries=loadEntries().filter(e=>e.cycle===cycle);
+  const impT=entries.reduce((s,e)=>s+e.import,0);
+  const solT=entries.reduce((s,e)=>s+e.solar,0);
+  const totT=entries.reduce((s,e)=>s+e.total,0);
+  const eng=tiered(impT,r1,r2,r3);
+  const ftAmt=impT*ft;
+  const actual=(eng+ftAmt+svc)*1.07;
+  const npEng=tiered(totT,r1,r2,r3);
+  const npFt=totT*ft;
+  const noPanel=(npEng+npFt+svc)*1.07;
+  const saved=noPanel-actual;
+  document.getElementById('c_import').textContent=fmt(impT)+' unit';
+  document.getElementById('c_solar').textContent=fmt(solT)+' unit';
+  document.getElementById('c_total').textContent=fmt(totT)+' unit';
+  document.getElementById('c_energy').textContent=fmtB(eng);
+  document.getElementById('c_ft').textContent=fmtB(ftAmt);
+  document.getElementById('c_svc').textContent=fmtB(svc);
+  document.getElementById('c_actual').textContent=fmtB(actual);
+  document.getElementById('c_np_energy').textContent=fmtB(npEng);
+  document.getElementById('c_np_ft').textContent=fmtB(npFt);
+  document.getElementById('c_np_svc').textContent=fmtB(svc);
+  document.getElementById('c_nopanel').textContent=fmtB(noPanel);
+  document.getElementById('c_saved').textContent=fmtB(saved);
+  document.getElementById('saveLabel').value=cycle;
+  document.getElementById('calcResult').style.display='block';
+  lastCalc={cycle,impT,solT,totT,actual,noPanel,saved};
+}
+
+// ---- SUMMARY ----
+function loadSummary(){ return JSON.parse(localStorage.getItem(KEY_S)||'[]'); }
+function saveSummaryData(a){ localStorage.setItem(KEY_S,JSON.stringify(a)); }
+
+function saveSummary(){
+  if(!lastCalc){alert('กรุณาคำนวณก่อน');return;}
+  const label=document.getElementById('saveLabel').value.trim()||lastCalc.cycle;
+  const s=loadSummary();
+  s.push({label,...lastCalc});
+  saveSummaryData(s);
+  renderSummary();
+  alert('บันทึกแล้ว: '+label);
+}
+function deleteSummaryRow(i){
+  const s=loadSummary(); s.splice(i,1); saveSummaryData(s); renderSummary();
+}
+function clearSummary(){
+  if(confirm('ล้างสรุปรายเดือนทั้งหมด?')){localStorage.removeItem(KEY_S);renderSummary();}
+}
+
+let chartInst=null;
+function renderSummary(){
+  const summary=loadSummary();
+  const totalCostAmt=totalCost();
+  document.getElementById('summaryCount').textContent=summary.length;
+
+  if(summary.length===0){
+    document.getElementById('summaryWrap').innerHTML='<p class="empty-msg">ยังไม่มีข้อมูล — บันทึกผลจากแท็บ "คำนวณ" ก่อน</p>';
+    document.getElementById('paybackBanner').innerHTML='';
+    if(chartInst){chartInst.destroy();chartInst=null;}
+    return;
+  }
+
+  let cumSaved=0;
+  let paybackMonth=null;
+  let html=`<table class="dt"><tr><th>รอบ/เดือน</th><th>ค่าไฟ(฿)</th><th>ประหยัด(฿)</th><th>สะสมประหยัด(฿)</th><th>ต้นทุนคงเหลือ(฿)</th><th></th></tr>`;
+  const labels=[], dataCumSaved=[], dataCost=[];
+
+  summary.forEach((s,i)=>{
+    cumSaved+=s.saved;
+    const remaining=Math.max(0, totalCostAmt-cumSaved);
+    const isDone=totalCostAmt>0 && cumSaved>=totalCostAmt;
+    if(isDone && paybackMonth===null) paybackMonth=s.label;
+    const remainText= totalCostAmt===0 ? '-' : (isDone ? '🎉 คืนทุนแล้ว' : fmtB(remaining));
+    html+=`<tr class="${isDone?'payback-done':''}">
+      <td>${s.label}</td>
+      <td>${fmtB(s.actual)}</td>
+      <td>${fmtB(s.saved)}</td>
+      <td>${fmtB(cumSaved)}</td>
+      <td>${remainText}</td>
+      <td><button class="smbtn danger" onclick="deleteSummaryRow(${i})">ลบ</button></td>
+    </tr>`;
+    labels.push(s.label);
+    dataCumSaved.push(parseFloat(cumSaved.toFixed(2)));
+    dataCost.push(parseFloat(totalCostAmt.toFixed(2)));
+  });
+  html+='</table>';
+  document.getElementById('summaryWrap').innerHTML=html;
+
+  // payback banner
+  const banner=document.getElementById('paybackBanner');
+  if(paybackMonth){
+    banner.innerHTML=`<div class="payback-banner">🎉 คืนทุนแล้วตั้งแต่รอบ ${paybackMonth}!</div>`;
+  } else if(totalCostAmt>0){
+    const left=totalCostAmt-cumSaved;
+    banner.innerHTML=`<div style="background:var(--sky2);border-radius:10px;padding:10px;text-align:center;font-size:.82rem;color:#546e7a;margin-top:6px;">ต้นทุนคงเหลืออีก <strong>${fmtB(left)}</strong> จึงจะคืนทุน</div>`;
+  } else {
+    banner.innerHTML='';
+  }
+
+  // กราฟ
+  const ctx=document.getElementById('paybackChart').getContext('2d');
+  if(chartInst) chartInst.destroy();
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'เงินประหยัดสะสม (฿)',data:dataCumSaved,borderColor:'#43a047',backgroundColor:'rgba(67,160,71,.08)',borderWidth:2.5,pointRadius:4,tension:.3,fill:true},
+        {label:'รวมต้นทุน (฿)',data:dataCost,borderColor:'#e53935',backgroundColor:'rgba(229,57,53,.05)',borderWidth:2,borderDash:[6,4],pointRadius:0,tension:0,fill:false},
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{font:{size:11},color:'#37474f'}}},
+      scales:{
+        x:{ticks:{font:{size:10},color:'#546e7a'},grid:{color:'rgba(33,150,243,.08)'}},
+        y:{ticks:{font:{size:10},color:'#546e7a'},grid:{color:'rgba(33,150,243,.08)'},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// ---- EXPORT CSV ----
+function downloadCSV(filename, rows){
+  const BOM='\uFEFF'; // รองรับภาษาไทยใน Excel
+  const csv=BOM+rows.map(r=>r.map(cell=>{
+    const s=String(cell);
+    return s.includes(',')||s.includes('"')||s.includes('\n') ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportEntriesCSV(){
+  const entries=loadEntries();
+  if(entries.length===0){alert('ไม่มีข้อมูลรายวัน');return;}
+  const sorted=[...entries].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  let ct=0,ci=0,cs=0;
+  const header=['วันที่','รอบบิล','ใช้รวม(unit)','Import(unit)','โซลาร์(unit)','สะสมใช้(unit)','สะสมImport(unit)','สะสมโซลาร์(unit)'];
+  const rows=[header];
+  sorted.forEach(e=>{
+    ct+=e.total; ci+=e.import; cs+=e.solar;
+    rows.push([e.date, e.cycle,
+      e.total.toFixed(2), e.import.toFixed(2), e.solar.toFixed(2),
+      ct.toFixed(2), ci.toFixed(2), cs.toFixed(2)
+    ]);
+  });
+  downloadCSV('solar_รายวัน_'+todayStr()+'.csv', rows);
+}
+
+function exportSummaryCSV(){
+  const summary=loadSummary();
+  if(summary.length===0){alert('ไม่มีข้อมูลสรุปรายเดือน');return;}
+  const totalCostAmt=totalCost();
+  let cumSaved=0;
+  const header=['รอบ/เดือน','ค่าไฟที่จ่าย(บาท)','ประหยัดได้(บาท)','สะสมประหยัด(บาท)','ต้นทุนคงเหลือ(บาท)','สถานะ'];
+  const rows=[header];
+  summary.forEach(s=>{
+    cumSaved+=s.saved;
+    const remaining=Math.max(0,totalCostAmt-cumSaved);
+    const isDone=totalCostAmt>0 && cumSaved>=totalCostAmt;
+    const status=totalCostAmt===0?'-':(isDone?'คืนทุนแล้ว':'กำลังสะสม');
+    rows.push([s.label,
+      s.actual.toFixed(2), s.saved.toFixed(2),
+      cumSaved.toFixed(2),
+      totalCostAmt===0?'-':remaining.toFixed(2),
+      status
+    ]);
+  });
+  downloadCSV('solar_สรุปรายเดือน_'+todayStr()+'.csv', rows);
+}
+
+function renderAll(){renderTable();renderSummary();}
+
+// ---- INIT ----
+document.getElementById('entry_date').value=todayStr();
+const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const nd=new Date();
+document.getElementById('entry_cycle').value=mn[nd.getMonth()]+' '+nd.getFullYear();
+loadConst(); renderCost(); renderAll();
+</script>
+</body>
+</html>

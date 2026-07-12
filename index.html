@@ -187,7 +187,7 @@ table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
 <div class="card sec" id="sec2">
   <h2>🧮 คำนวณค่าไฟ</h2>
   <label>เลือกรอบบิล</label>
-  <select id="calc_cycle"><option value="">-- เลือกรอบ --</option></select>
+  <select id="calc_cycle" onchange="onCycleChange()"><option value="">-- เลือกรอบ --</option></select>
   <button class="btn" onclick="calcBill()">🧮 คำนวณค่าไฟรอบนี้</button>
   <div id="calcResult" style="display:none;margin-top:12px;">
     <div class="result-box">
@@ -440,9 +440,45 @@ function populateCycleSelect(){
   const cur=sel.value;
   sel.innerHTML='<option value="">-- เลือกรอบ --</option>';
   cycles.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===cur)o.selected=true;sel.appendChild(o);});
+  // ถ้ามีรอบที่เลือกไว้ค้าง และเคยคำนวณแล้ว ให้โชว์ผลเดิมกลับมา
+  if(sel.value){ showCachedCalcIfAny(sel.value); }
+}
+
+function onCycleChange(){
+  const cycle=document.getElementById('calc_cycle').value;
+  if(cycle){ showCachedCalcIfAny(cycle); }
+  else { document.getElementById('calcResult').style.display='none'; }
+}
+
+function showCachedCalcIfAny(cycle){
+  const cache=JSON.parse(localStorage.getItem(KEY_CALC_CACHE)||'{}');
+  if(cache[cycle]){
+    lastCalc=cache[cycle];
+    renderCalcResult(lastCalc);
+  } else {
+    document.getElementById('calcResult').style.display='none';
+  }
+}
+
+function renderCalcResult(r){
+  document.getElementById('c_import').textContent=fmt(r.impT)+' unit';
+  document.getElementById('c_solar').textContent=fmt(r.solT)+' unit';
+  document.getElementById('c_total').textContent=fmt(r.totT)+' unit';
+  document.getElementById('c_energy').textContent=fmtB(r.eng);
+  document.getElementById('c_ft').textContent=fmtB(r.ftAmt);
+  document.getElementById('c_svc').textContent=fmtB(r.svc);
+  document.getElementById('c_actual').textContent=fmtB(r.actual);
+  document.getElementById('c_np_energy').textContent=fmtB(r.npEng);
+  document.getElementById('c_np_ft').textContent=fmtB(r.npFt);
+  document.getElementById('c_np_svc').textContent=fmtB(r.svc);
+  document.getElementById('c_nopanel').textContent=fmtB(r.noPanel);
+  document.getElementById('c_saved').textContent=fmtB(r.saved);
+  document.getElementById('saveLabel').value=r.cycle;
+  document.getElementById('calcResult').style.display='block';
 }
 
 // ---- CALC BILL ----
+const KEY_CALC_CACHE='sv4_calc_cache';
 let lastCalc=null;
 function calcBill(){
   const cycle=document.getElementById('calc_cycle').value;
@@ -461,21 +497,12 @@ function calcBill(){
   const npFt=totT*ft;
   const noPanel=(npEng+npFt+svc)*1.07;
   const saved=noPanel-actual;
-  document.getElementById('c_import').textContent=fmt(impT)+' unit';
-  document.getElementById('c_solar').textContent=fmt(solT)+' unit';
-  document.getElementById('c_total').textContent=fmt(totT)+' unit';
-  document.getElementById('c_energy').textContent=fmtB(eng);
-  document.getElementById('c_ft').textContent=fmtB(ftAmt);
-  document.getElementById('c_svc').textContent=fmtB(svc);
-  document.getElementById('c_actual').textContent=fmtB(actual);
-  document.getElementById('c_np_energy').textContent=fmtB(npEng);
-  document.getElementById('c_np_ft').textContent=fmtB(npFt);
-  document.getElementById('c_np_svc').textContent=fmtB(svc);
-  document.getElementById('c_nopanel').textContent=fmtB(noPanel);
-  document.getElementById('c_saved').textContent=fmtB(saved);
-  document.getElementById('saveLabel').value=cycle;
-  document.getElementById('calcResult').style.display='block';
-  lastCalc={cycle,impT,solT,totT,actual,noPanel,saved};
+  lastCalc={cycle,impT,solT,totT,eng,ftAmt,svc,actual,npEng,npFt,noPanel,saved};
+  renderCalcResult(lastCalc);
+  // เก็บผลคำนวณแยกตามรอบบิล ให้กลับมาดูซ้ำได้
+  const cache=JSON.parse(localStorage.getItem(KEY_CALC_CACHE)||'{}');
+  cache[cycle]=lastCalc;
+  localStorage.setItem(KEY_CALC_CACHE, JSON.stringify(cache));
 }
 
 // ---- SUMMARY ----
@@ -485,11 +512,15 @@ function saveSummaryData(a){ localStorage.setItem(KEY_S,JSON.stringify(a)); }
 function saveSummary(){
   if(!lastCalc){alert('กรุณาคำนวณก่อน');return;}
   const label=document.getElementById('saveLabel').value.trim()||lastCalc.cycle;
-  const s=loadSummary();
+  let s=loadSummary();
+  // ถ้ารอบนี้เคยบันทึกไว้แล้ว (label ซ้ำ) ให้ลบแถวเก่าออกก่อน กันยอดสะสมซ้ำ
+  const existedIdx = s.findIndex(x=>x.label===label);
+  const isUpdate = existedIdx !== -1;
+  if(isUpdate){ s.splice(existedIdx,1); }
   s.push({label,...lastCalc});
   saveSummaryData(s);
   renderSummary();
-  alert('บันทึกแล้ว: '+label);
+  alert((isUpdate?'อัปเดตแล้ว (แทนที่ของเดิม): ':'บันทึกแล้ว: ')+label);
 }
 function deleteSummaryRow(i){
   const s=loadSummary(); s.splice(i,1); saveSummaryData(s); renderSummary();
@@ -513,7 +544,7 @@ function renderSummary(){
 
   let cumSaved=0;
   let paybackMonth=null;
-  let html=`<table class="dt"><tr><th>รอบ/เดือน</th><th>ค่าไฟ(฿)</th><th>ประหยัด(฿)</th><th>สะสมประหยัด(฿)</th><th>ต้นทุนคงเหลือ(฿)</th><th></th></tr>`;
+  let html=`<table class="dt"><tr><th>รอบ/เดือน</th><th>Import<br>(unit)</th><th>โซลาร์<br>(unit)</th><th>รวมใช้<br>(unit)</th><th>ค่าไฟ(฿)</th><th>ประหยัด(฿)</th><th>สะสมประหยัด(฿)</th><th>ต้นทุนคงเหลือ(฿)</th><th></th></tr>`;
   const labels=[], dataCumSaved=[], dataCost=[];
 
   summary.forEach((s,i)=>{
@@ -524,6 +555,9 @@ function renderSummary(){
     const remainText= totalCostAmt===0 ? '-' : (isDone ? '🎉 คืนทุนแล้ว' : fmtB(remaining));
     html+=`<tr class="${isDone?'payback-done':''}">
       <td>${s.label}</td>
+      <td>${fmt(s.impT)}</td>
+      <td>${fmt(s.solT)}</td>
+      <td>${fmt(s.totT)}</td>
       <td>${fmtB(s.actual)}</td>
       <td>${fmtB(s.saved)}</td>
       <td>${fmtB(cumSaved)}</td>
@@ -613,12 +647,12 @@ function exportSummaryCSV(){
   if(summary.length===0){alert('ไม่มีข้อมูลสรุปรายเดือน');return;}
   const totalCostAmt=totalCost();
   let cumSaved=0;
-  const rows=[['รอบ/เดือน','ค่าไฟที่จ่าย(บาท)','ประหยัดได้(บาท)','สะสมประหยัด(บาท)','ต้นทุนคงเหลือ(บาท)','สถานะ']];
+  const rows=[['รอบ/เดือน','Import(unit)','โซลาร์(unit)','รวมใช้(unit)','ค่าไฟที่จ่าย(บาท)','ประหยัดได้(บาท)','สะสมประหยัด(บาท)','ต้นทุนคงเหลือ(บาท)','สถานะ']];
   summary.forEach(s=>{
     cumSaved+=s.saved;
     const remaining=Math.max(0,totalCostAmt-cumSaved);
     const isDone=totalCostAmt>0&&cumSaved>=totalCostAmt;
-    rows.push([s.label,s.actual.toFixed(2),s.saved.toFixed(2),cumSaved.toFixed(2),totalCostAmt===0?'-':remaining.toFixed(2),totalCostAmt===0?'-':(isDone?'คืนทุนแล้ว':'กำลังสะสม')]);
+    rows.push([s.label,s.impT.toFixed(2),s.solT.toFixed(2),s.totT.toFixed(2),s.actual.toFixed(2),s.saved.toFixed(2),cumSaved.toFixed(2),totalCostAmt===0?'-':remaining.toFixed(2),totalCostAmt===0?'-':(isDone?'คืนทุนแล้ว':'กำลังสะสม')]);
   });
   shareOrDownload('solar_สรุปรายเดือน_'+todayStr()+'.csv', makeCSVBlob(rows));
 }

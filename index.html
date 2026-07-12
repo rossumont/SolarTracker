@@ -96,13 +96,34 @@ table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
 </header>
 <div class="container">
 
-<!-- ===== ต้นทุน ===== -->
+<!-- ===== DASHBOARD ต้นทุน (หน้าแรก) ===== -->
+<div class="card">
+  <h2>📊 สถานะต้นทุนและคืนทุน</h2>
+  <div class="sum-grid" style="grid-template-columns:1fr 1fr;">
+    <div class="sum-box" style="background:linear-gradient(135deg,#1565c0,#42a5f5);color:white;">
+      <div class="num" id="dash_cost">฿0</div>
+      <div class="cap">รวมต้นทุนทั้งหมด</div>
+    </div>
+    <div class="sum-box" style="background:linear-gradient(135deg,#43a047,#81c784);color:white;">
+      <div class="num" id="dash_cumSaved">฿0</div>
+      <div class="cap">ประหยัดสะสมแล้ว</div>
+    </div>
+  </div>
+  <div style="margin-top:10px;">
+    <div style="background:#f5f9ff;border-radius:10px;padding:12px;">
+      <div class="rrow"><span class="lbl">ต้นทุนคงเหลือ</span><span class="val" id="dash_remaining" style="color:#e53935;">฿0</span></div>
+      <div class="rrow"><span class="lbl">คืนทุนไปแล้ว</span><span class="val" id="dash_percent" style="color:#43a047;">0%</span></div>
+      <div style="background:#e0e0e0;border-radius:20px;height:12px;margin-top:8px;overflow:hidden;">
+        <div id="dash_bar" style="background:linear-gradient(90deg,#43a047,#81c784);height:100%;width:0%;border-radius:20px;transition:width .5s;"></div>
+      </div>
+    </div>
+    <div id="dash_banner" style="margin-top:8px;"></div>
+  </div>
+</div>
+
+<!-- ===== จัดการต้นทุน ===== -->
 <div class="card">
   <h2>💰 จัดการต้นทุน</h2>
-  <div class="cost-total">
-    <div class="num" id="cost_total">฿0</div>
-    <div class="cap">รวมต้นทุนทั้งหมด</div>
-  </div>
   <div id="cost_list"></div>
   <div class="row2" style="margin-top:8px;">
     <div><label>รายการ</label><input type="text" id="cost_name" placeholder="เช่น ค่าติดตั้งโซลาร์"></div>
@@ -158,7 +179,6 @@ table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
   </div>
   <div id="tableWrap"><p class="empty-msg">ยังไม่มีข้อมูล</p></div>
   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-    <button class="btn btn-sm" onclick="exportEntriesCSV()" style="background:#1565c0;">📥 Export CSV รายวัน</button>
     <button class="btn btn-red btn-sm" onclick="clearEntries()">🗑️ ล้างข้อมูลรายวัน</button>
   </div>
 </div>
@@ -213,6 +233,21 @@ table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
   </div>
 </div>
 
+<!-- ===== Backup / Restore ===== -->
+<div class="card">
+  <h2>💾 สำรองและกู้คืนข้อมูล</h2>
+  <p style="font-size:.78rem;color:#546e7a;margin-bottom:10px;">Export JSON = สำรองข้อมูลทั้งหมด (ต้นทุน + รายวัน + สรุปรายเดือน) ในไฟล์เดียว<br>Import JSON = กู้คืนข้อมูลจากไฟล์ที่สำรองไว้</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <button class="btn btn-sm btn-green" onclick="exportAllJSON()">📦 Export JSON (สำรองทั้งหมด)</button>
+    <button class="btn btn-sm" onclick="exportEntriesCSV()" style="background:#0288d1;">📥 Export CSV สะสมรายวัน</button>
+  </div>
+  <div style="margin-top:12px;">
+    <label>📂 Import JSON (กู้คืนข้อมูล)</label>
+    <input type="file" id="importFile" accept=".json" style="margin-bottom:8px;" onchange="importJSON(event)">
+    <p id="importMsg" style="font-size:.78rem;color:var(--green);"></p>
+  </div>
+</div>
+
 <div class="card">
   <h2>ℹ️ เรทค่าไฟที่ใช้</h2>
   <div class="info-box">
@@ -220,6 +255,28 @@ table.dt .payback-done{background:#e8f5e9;color:#1b5e20;font-weight:700;}
     หน่วย 151–400: เรทที่ตั้ง (ค่าเริ่มต้น 4.22 ฿)<br>
     หน่วย 401+: เรทที่ตั้ง (ค่าเริ่มต้น 4.42 ฿)<br>
     + ค่าบริการรายเดือน + ค่า Ft + VAT 7%
+  </div>
+</div>
+
+<div class="card">
+  <h2>📖 วิธีอ่านค่าจากแอพโซลาร์ แล้วกรอกลงเว็บนี้</h2>
+  <div class="info-box">
+    <strong>1. ดูค่ารายวัน (กราฟแท่งในแอพ)</strong><br>
+    เปิดแอพโซลาร์ → แท็บ Data → ดูกราฟแท่งรายเดือน แต่ละแท่งคือ 1 วัน<br>
+    • แถบสีม่วง (Import) = หน่วยไฟที่ซื้อจากการไฟฟ้าวันนั้น → กรอกช่อง "Import จากการไฟฟ้า"<br>
+    • ยอดรวมทั้งแท่ง (เขียว PV + ฟ้า Discharge + ม่วง Import) = หน่วยที่ใช้ทั้งหมดวันนั้น → กรอกช่อง "รวมใช้ทั้งหมดวันนี้"<br><br>
+
+    <strong>2. รอบบิลนับยังไง</strong><br>
+    ถ้าการไฟฟ้าตัดยอดทุกวันที่ 7 ของเดือน รอบบิลจะไม่ตรงเดือนปฏิทิน เช่น รอบบิลเดือนกรกฎาคม = 8 มิ.ย. – 7 ก.ค.<br>
+    ช่อง "รอบบิล" ให้ใส่ชื่อเดียวกันทุกวันในรอบนั้น เช่น Jul 2026 ตั้งแต่วันที่ 8 มิ.ย. ถึง 7 ก.ค. ระบบจะรวมยอดทั้งรอบให้อัตโนมัติตอนกด "คำนวณ"<br><br>
+
+    <strong>3. กรอกได้ 2 แบบ</strong><br>
+    • แบบละเอียด (รายวัน) — เปิดแอพดูทุกวัน กรอกทีละวัน ได้ตารางสะสมแม่นยำ เห็นแนวโน้มการใช้ไฟ<br>
+    • แบบเร็ว (ยอดรวมทั้งรอบ) — เปิดแอพดูยอดสะสมของทั้งเดือน กรอกเป็นก้อนเดียว (1 แถว) ก็คำนวณค่าไฟและความประหยัดได้เหมือนกัน แค่ไม่มีรายละเอียดรายวัน<br><br>
+
+    <strong>4. ทำไมตัวเลขในเว็บไม่ตรงกับบิลจริงเป๊ะ</strong><br>
+    ค่าที่คำนวณเป็นค่าประมาณ เพราะแอพโซลาร์อ่านหน่วยจากมิเตอร์ตัวเอง อาจคลาดเคลื่อนเล็กน้อยจากมิเตอร์การไฟฟ้าจริง และค่า Ft/เรทค่าไฟอาจปรับเปลี่ยนได้ทุกรอบ ต้องอัปเดตในช่อง "ค่าคงที่" เอง<br>
+    แต่ตัวเลข "ประหยัดได้เท่าไร" ยังใช้เทียบเคียงได้แม่นยำ เพราะเป็นการเทียบสัดส่วนไฟที่ใช้จากแผงกับไฟที่ต้องซื้อ ไม่ได้อิงกับความแม่นยำของมิเตอร์โดยตรง
   </div>
 </div>
 
@@ -252,10 +309,29 @@ function addCost(){
 function deleteCost(i){
   const c=loadCost(); c.splice(i,1); saveCost(c); renderCost(); renderSummary();
 }
+function renderDashboard(){
+  const costAmt = totalCost();
+  const summary = loadSummary();
+  let cumSaved = summary.reduce((s,x)=>s+x.saved, 0);
+  const remaining = Math.max(0, costAmt - cumSaved);
+  const pct = costAmt > 0 ? Math.min(100, (cumSaved/costAmt)*100) : 0;
+  const isDone = costAmt > 0 && cumSaved >= costAmt;
+
+  document.getElementById('dash_cost').textContent = fmtB(costAmt);
+  document.getElementById('dash_cumSaved').textContent = fmtB(cumSaved);
+  document.getElementById('dash_remaining').textContent = isDone ? '฿0' : fmtB(remaining);
+  document.getElementById('dash_percent').textContent = pct.toFixed(1)+'%';
+  document.getElementById('dash_bar').style.width = pct.toFixed(1)+'%';
+  document.getElementById('dash_banner').innerHTML = isDone
+    ? '<div class="payback-banner">🎉 คืนทุนแล้ว!</div>'
+    : costAmt > 0
+      ? `<div style="background:var(--sky2);border-radius:8px;padding:8px;text-align:center;font-size:.8rem;color:#546e7a;">เหลืออีก <strong>${fmtB(remaining)}</strong> จึงจะคืนทุน</div>`
+      : '';
+}
+
 function renderCost(){
   const cost=loadCost();
-  const total=cost.reduce((s,c)=>s+c.amt,0);
-  document.getElementById('cost_total').textContent=fmtB(total);
+  renderDashboard();
   if(cost.length===0){document.getElementById('cost_list').innerHTML='<p class="empty-msg">ยังไม่มีรายการต้นทุน</p>';return;}
   let html='<div class="cost-list">';
   cost.forEach((c,i)=>{
@@ -302,6 +378,7 @@ function addEntry(){
   const entries=loadEntries();
   entries.push({date,cycle,total,import:imp,solar});
   saveEntries(entries);
+  localStorage.setItem('sv4_last_cycle', cycle);
   document.getElementById('entry_total').value='';
   document.getElementById('entry_import').value='';
   renderAll();
@@ -494,18 +571,28 @@ function renderSummary(){
   });
 }
 
-// ---- EXPORT CSV ----
-function downloadCSV(filename, rows){
-  const BOM='\uFEFF'; // รองรับภาษาไทยใน Excel
-  const csv=BOM+rows.map(r=>r.map(cell=>{
-    const s=String(cell);
-    return s.includes(',')||s.includes('"')||s.includes('\n') ? '"'+s.replace(/"/g,'""')+'"' : s;
-  }).join(',')).join('\r\n');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+// ---- SHARE / DOWNLOAD ----
+async function shareOrDownload(filename, blob){
+  if(navigator.share && navigator.canShare && navigator.canShare({files:[new File([blob],filename)]})){
+    try{
+      await navigator.share({files:[new File([blob],filename)], title:filename});
+      return;
+    }catch(e){ if(e.name==='AbortError') return; }
+  }
+  // fallback: download
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   a.href=url; a.download=filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+function makeCSVBlob(rows){
+  const BOM='\uFEFF';
+  const csv=BOM+rows.map(r=>r.map(cell=>{
+    const s=String(cell);
+    return s.includes(',')||s.includes('"')||s.includes('\n') ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  return new Blob([csv],{type:'text/csv;charset=utf-8;'});
 }
 
 function exportEntriesCSV(){
@@ -513,16 +600,12 @@ function exportEntriesCSV(){
   if(entries.length===0){alert('ไม่มีข้อมูลรายวัน');return;}
   const sorted=[...entries].sort((a,b)=>new Date(a.date)-new Date(b.date));
   let ct=0,ci=0,cs=0;
-  const header=['วันที่','รอบบิล','ใช้รวม(unit)','Import(unit)','โซลาร์(unit)','สะสมใช้(unit)','สะสมImport(unit)','สะสมโซลาร์(unit)'];
-  const rows=[header];
+  const rows=[['วันที่','รอบบิล','ใช้รวม(unit)','Import(unit)','โซลาร์(unit)','สะสมใช้(unit)','สะสมImport(unit)','สะสมโซลาร์(unit)']];
   sorted.forEach(e=>{
     ct+=e.total; ci+=e.import; cs+=e.solar;
-    rows.push([e.date, e.cycle,
-      e.total.toFixed(2), e.import.toFixed(2), e.solar.toFixed(2),
-      ct.toFixed(2), ci.toFixed(2), cs.toFixed(2)
-    ]);
+    rows.push([e.date,e.cycle,e.total.toFixed(2),e.import.toFixed(2),e.solar.toFixed(2),ct.toFixed(2),ci.toFixed(2),cs.toFixed(2)]);
   });
-  downloadCSV('solar_รายวัน_'+todayStr()+'.csv', rows);
+  shareOrDownload('solar_รายวัน_'+todayStr()+'.csv', makeCSVBlob(rows));
 }
 
 function exportSummaryCSV(){
@@ -530,30 +613,72 @@ function exportSummaryCSV(){
   if(summary.length===0){alert('ไม่มีข้อมูลสรุปรายเดือน');return;}
   const totalCostAmt=totalCost();
   let cumSaved=0;
-  const header=['รอบ/เดือน','ค่าไฟที่จ่าย(บาท)','ประหยัดได้(บาท)','สะสมประหยัด(บาท)','ต้นทุนคงเหลือ(บาท)','สถานะ'];
-  const rows=[header];
+  const rows=[['รอบ/เดือน','ค่าไฟที่จ่าย(บาท)','ประหยัดได้(บาท)','สะสมประหยัด(บาท)','ต้นทุนคงเหลือ(บาท)','สถานะ']];
   summary.forEach(s=>{
     cumSaved+=s.saved;
     const remaining=Math.max(0,totalCostAmt-cumSaved);
-    const isDone=totalCostAmt>0 && cumSaved>=totalCostAmt;
-    const status=totalCostAmt===0?'-':(isDone?'คืนทุนแล้ว':'กำลังสะสม');
-    rows.push([s.label,
-      s.actual.toFixed(2), s.saved.toFixed(2),
-      cumSaved.toFixed(2),
-      totalCostAmt===0?'-':remaining.toFixed(2),
-      status
-    ]);
+    const isDone=totalCostAmt>0&&cumSaved>=totalCostAmt;
+    rows.push([s.label,s.actual.toFixed(2),s.saved.toFixed(2),cumSaved.toFixed(2),totalCostAmt===0?'-':remaining.toFixed(2),totalCostAmt===0?'-':(isDone?'คืนทุนแล้ว':'กำลังสะสม')]);
   });
-  downloadCSV('solar_สรุปรายเดือน_'+todayStr()+'.csv', rows);
+  shareOrDownload('solar_สรุปรายเดือน_'+todayStr()+'.csv', makeCSVBlob(rows));
 }
 
-function renderAll(){renderTable();renderSummary();}
+// ---- JSON EXPORT / IMPORT ----
+function exportAllJSON(){
+  const data={
+    exportDate: todayStr(),
+    version: 'v4',
+    cost: loadCost(),
+    entries: loadEntries(),
+    summary: loadSummary(),
+    constants: JSON.parse(localStorage.getItem(KEY_C)||'{}'),
+  };
+  const json=JSON.stringify(data, null, 2);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8;'});
+  shareOrDownload('solar_backup_'+todayStr()+'.json', blob);
+}
+
+function importJSON(event){
+  const file=event.target.files[0];
+  if(!file){return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.version){throw new Error('ไฟล์ไม่ถูกต้อง');}
+      if(!confirm('ข้อมูลปัจจุบันจะถูกแทนที่ด้วยข้อมูลจากไฟล์ ยืนยันหรือไม่?')){
+        document.getElementById('importFile').value='';
+        return;
+      }
+      if(data.cost) saveCost(data.cost);
+      if(data.entries) saveEntries(data.entries);
+      if(data.summary) saveSummaryData(data.summary);
+      if(data.constants) localStorage.setItem(KEY_C, JSON.stringify(data.constants));
+      loadConst(); renderCost(); renderAll();
+      const msg=document.getElementById('importMsg');
+      msg.textContent='✅ กู้คืนข้อมูลสำเร็จ! (จากไฟล์ '+data.exportDate+')';
+      document.getElementById('importFile').value='';
+      setTimeout(()=>msg.textContent='',5000);
+    }catch(err){
+      alert('เกิดข้อผิดพลาด: '+err.message);
+      document.getElementById('importFile').value='';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function renderAll(){renderTable();renderSummary();renderDashboard();}
 
 // ---- INIT ----
 document.getElementById('entry_date').value=todayStr();
-const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const nd=new Date();
-document.getElementById('entry_cycle').value=mn[nd.getMonth()]+' '+nd.getFullYear();
+const lastCycle = localStorage.getItem('sv4_last_cycle');
+if(lastCycle){
+  document.getElementById('entry_cycle').value = lastCycle;
+} else {
+  const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const nd=new Date();
+  document.getElementById('entry_cycle').value=mn[nd.getMonth()]+' '+nd.getFullYear();
+}
 loadConst(); renderCost(); renderAll();
 </script>
 </body>
